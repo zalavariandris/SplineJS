@@ -116,7 +116,6 @@ function createUIForPoints(){
         dragPoint.model = i;
         dragPoint.onDrag((i, pos)=>{
             points[i] = pos;
-            console.log("drag: "+i);
             update();
         });
     }
@@ -129,13 +128,14 @@ function init(){
 }
 
 function update(){
-    console.log("update");
     draw();
 }
 
 function draw(){
     ctx.clearRect (0, 0, 500, 500);
+    ctx.setLineDash([5, 10]);
     drawPolygon(ctx, points, "cyan");
+    ctx.setLineDash([]);
     drawCubicBezier(ctx, points[0], points[1], points[2], points[3]);
 }
 
