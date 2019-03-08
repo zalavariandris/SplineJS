@@ -15,7 +15,7 @@
             height: 500px;
         }
 
-        #myCanvas{
+        #viewport canvas{
             position: absolute;
             top: 0px;
             left: 0px;
@@ -47,14 +47,14 @@
             outline: none;
         }
         </style>
+
     </head>
     <body>
-        <div id=viewport>
-            <canvas id="myCanvas" width=500 height=500></canvas>
-        </div>
+        <div id=viewport></div>
 
-
-        <script type="text/javascript" src="./bezier.js"></script>
-        <script type="text/javascript" src="./main.js"></script>
+        <script type="text/javascript" src="lib/dat.gui.min.js"></script>
+        <script type="text/javascript" src="viewport.js"></script>
+        <script type="text/javascript" src="bezier.js"></script>
+        <script type="text/javascript" src="main.js"></script>
     </body>
 </html>

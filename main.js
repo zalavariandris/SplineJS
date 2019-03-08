@@ -1,6 +1,13 @@
 /**
  * drawing helpers
  */
+function drawCircle(ctx, P, r=5, color="white"){
+    ctx.beginPath();
+    ctx.arc(P.x, P.y, r, 0, Math.PI*2);
+    ctx.fillStyle=color;
+    ctx.fill();
+}
+ 
 function drawPolygon(ctx, points, color="white"){
     ctx.beginPath();
     for(var i=0;i<points.length; i++){
@@ -19,10 +26,10 @@ function drawLine(ctx, A, B, color="white"){
     ctx.stroke()
 }
 
-function drawCubicBezier(ctx, A, B, C, D, color="white"){
+function drawCubicBezier(ctx, A, B, C, D, color="white", segments=100){
     // draw cubic bezier curve
     ctx.beginPath();
-    for(var t=0;t<1.0;t+=0.01){
+    for(var t=0;t<1.0;t+=1/segments){
         var P = bezier([A, B, C, D], t);
         ctx.lineTo(P.x, P.y);
     }
@@ -41,102 +48,75 @@ function drawBezier(ctx, points, color="white"){
 }
 
 /**
- * helper objects for interaction
- */
-class DragPoint{
-    constructor(element){
-        var self = this;
-        self.handler = {'onDrag':[]};
-        self.element = element;
-        self.canvas = document.getElementById("myCanvas");
-
-        element.onmousedown = function(e){
-
-            var O = self.canvas.getClientRects()[0];
-            
-            document.onmousemove = function drag(e) {
-                var P = {
-                    x: e.pageX-O.x,
-                    y: e.pageY-O.y
-                };
-                self.element.style.left = P.x+"px";
-                self.element.style.top = P.y+"px";
-
-                for(var handler of self.handler['onDrag']){
-                    handler(self.model, P);
-                };
-            };
-            
-            document.onmouseup = function () {
-                self.element.focus();
-                document.onmousemove = document.onmouseup = null;
-            }
-        };
-    }
-
-    onDrag(f){
-        this.handler['onDrag'].push(f);
-    }
-}
-
-/**
  * Main Script
  */
+var model;
+var gui;
+var viewport;
 
-// model
-var points = [];
-
-// view
-var canvas = document.getElementById("myCanvas");
-var viewport = document.getElementById("viewport");
-var ctx = document.getElementById("myCanvas").getContext("2d");
-
-//
-function populateWithRandomPoints(){
-    // populate points
+// main
+function init(){
+    model = {
+        points: [],
+        segments:64,
+        t: 0.5
+    }
     for(var i=0; i<4; i++){
         var P={
             x:Math.random() * 500, 
             y:Math.random() * 500
         };
-        points.push(P);
+        model.points.push(P);
     }
-}
 
-function createUIForPoints(){
-    // create interactive draggable points
-    for(var i=0;  i<points.length; i++){
-        var cp = document.createElement("Button");
-        cp.className = 'cp';
-        cp.style.left = parseInt(points[i].x) + 'px';
-        cp.style.top = parseInt(points[i].y) + 'px';
-        viewport.appendChild(cp);
+    // datGui
+    gui = new dat.GUI();
+    gui.add(model, 't', 0, 1).onChange(update);
+    gui.add(model, 'segments', 0, 100).onChange(update);
 
-        var dragPoint = new DragPoint(cp);
-        dragPoint.model = i;
-        dragPoint.onDrag((i, pos)=>{
-            points[i] = pos;
-            update();
-        });
+    // viewport
+    viewport = new Viewport("viewport");
+    for(var i=0;  i<model.points.length; i++){
+        var pointUI = viewport.addPoint(model.points[i]);
+        pointUI.onChange(update);
     }
-}
-
-function init(){
-    populateWithRandomPoints();
-    createUIForPoints();
-    update();
 }
 
 function update(){
+    console.log("update");
     draw();
 }
 
 function draw(){
+    ctx = viewport.getContext();
     ctx.clearRect (0, 0, 500, 500);
     ctx.setLineDash([5, 10]);
-    drawPolygon(ctx, points, "cyan");
+    drawPolygon(ctx, model.points, "cyan");
     ctx.setLineDash([]);
-    drawCubicBezier(ctx, points[0], points[1], points[2], points[3]);
+    drawCubicBezier(ctx, model.points[0], model.points[1], model.points[2], model.points[3], "white", model.segments);
+
+    // visualize cubic bezier curve construction
+    var A = model.points[0];
+    var B = model.points[1];
+    var C = model.points[2];
+    var D = model.points[3];
+    var P1 = lerp(A, B, model.t);
+    var Q1 = lerp(B, C, model.t);
+    var R1 = lerp(C, D, model.t);
+    drawLine(ctx, P1, Q1, "deeppink");
+    drawLine(ctx, Q1, R1, "deeppink");
+    drawCircle(ctx, P1, 3, "deeppink");
+    drawCircle(ctx, Q1, "deeppink");
+    drawCircle(ctx, R1, 3, "deeppink");
+
+    var P2 = lerp(P1, Q1, model.t);
+    var Q2 = lerp(Q1, R1, model.t);
+    drawLine(ctx, P2, Q2, "deeppink");
+    drawCircle(ctx, P2, 3, "deeppink");
+    drawCircle(ctx, Q2, 3, "deeppink");
+
+    var P3 = lerp(P2, Q2, model.t);
+    drawCircle(ctx, P3, 3, "deeppink");
 }
 
 init();
